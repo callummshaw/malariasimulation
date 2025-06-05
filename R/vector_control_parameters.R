@@ -27,38 +27,44 @@
 #' With nrows=length(timesteps), ncols=length(species)
 #' @param rnm a matrix of minimum repelling probabilities for each species over time
 #' With nrows=length(timesteps), ncols=length(species)
-#' @param gamman a vector of bednet half-lives for each distribution timestep
+#' @param gammad a vector of bednet killing half-lives for each distribution timestep
+#' @param gammar a vector of bednet repellency half-lives for each distribution timestep
+
 #' @export
 set_bednets <- function(
     parameters,
     timesteps,
     coverages,
+    coverage_by_type,
     retention,
     dn0,
     rn,
     rnm,
-    gamman
+    gammad,
+    gammar
 ) {
   stopifnot(all(coverages >= 0) && all(coverages <= 1))
-  lengths <- vnapply(list(coverages, gamman), length)
-  if (!all(lengths == length(timesteps))) {
-    stop('timesteps and time-varying parameters must align')
-  }
-  for (x in list(dn0, rn, rnm)) {
-    if (ncol(x) != length(parameters$species)) {
-      stop('death and repelling probabilities rows need to align with species')
-    }
-    if (nrow(x) != length(timesteps)) {
-      stop('death and repelling probabilities columns need to align with timesteps')
-    }
-  }
+  #lengths <- vnapply(list(coverages, gamman), length)
+  #if (!all(lengths == length(timesteps))) {
+   # stop('timesteps and time-varying parameters must align')
+  #}
+  #for (x in list(dn0, rn, rnm)) {
+   # if (ncol(x) != length(parameters$species)) {
+    #  stop('death and repelling probabilities rows need to align with species')
+    #}
+    #if (nrow(x) != length(timesteps)) {
+     # stop('death and repelling probabilities columns need to align with timesteps')
+    #}
+  #}
   parameters$bednets <- TRUE
   parameters$bednet_timesteps <- timesteps
   parameters$bednet_coverages <- coverages
+  parameters$bednet_coverage_by_type <- coverage_by_type
   parameters$bednet_dn0 <- dn0
   parameters$bednet_rn <- rn
   parameters$bednet_rnm <- rnm
-  parameters$bednet_gamman <- gamman
+  parameters$bednets_gammad <- gammad
+  parameters$bednet_gammar <- gammar
   parameters$bednet_retention <- retention
   parameters
 }

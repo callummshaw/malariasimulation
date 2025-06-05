@@ -26,8 +26,10 @@ prob_bitten <- function(
     net_time <- variables$net_time$get_values()
     since_net <- timestep - net_time
     matches <- match(net_time, parameters$bednet_timesteps)
+    
     rn <- prob_repelled_bednets(matches, since_net, species, parameters)
     sn <- prob_survives_bednets(rn, matches, since_net, species, parameters)
+    
     unused <- net_time == -1
     sn[unused] <- 1
     rn[unused] <- 0
@@ -172,13 +174,13 @@ prob_survives_spraying <- function(ks_prime, k0) {
 
 prob_repelled_bednets <- function(matches, dt, species, parameters) {
   rnm <- parameters$bednet_rnm[matches, species]
-  gamman <- parameters$bednet_gamman[matches]
-  (parameters$bednet_rn[matches, species] - rnm) * bednet_decay(dt, gamman) + rnm
+  gammar <- parameters$bednet_gammar[matches]
+  (parameters$bednet_rn[matches, species] - rnm) * bednet_decay(dt, gammar) + rnm
 }
 
 prob_survives_bednets <- function(rn, matches, dt, species, parameters) {
   dn0 <- parameters$bednet_dn0[matches, species]
-  dn <- dn0 * bednet_decay(dt, parameters$bednet_gamman[matches])
+  dn <- dn0 * bednet_decay(dt, parameters$bednet_gammad[matches])
   1 - rn - dn
 }
 

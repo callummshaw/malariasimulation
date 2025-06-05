@@ -301,6 +301,7 @@ create_variables <- function(parameters) {
 
   # Init vector controls
   net_time <- individual::IntegerVariable$new(rep(-1, size))
+  net_type <- individual::IntegerVariable$new(rep(-1, size))
   spray_time <- individual::IntegerVariable$new(rep(-1, size))
 
   variables <- list(
