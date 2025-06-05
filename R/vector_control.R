@@ -24,15 +24,25 @@ prob_bitten <- function(
   if (parameters$bednets) {
     phi_bednets <- parameters$phi_bednets[[species]]
     net_time <- variables$net_time$get_values()
+    net_type <- variables$net_type$get_values()
     since_net <- timestep - net_time
     matches <- match(net_time, parameters$bednet_timesteps)
+
+    sn <- rep(1, n)
+    rn <- rep(0, n)
+
+    for (i in 1:length(parameters$coverage_by_type)){
+      
+      type <- net_type == i
+      type_match <- match(test_times, i)
+      type_match <- !is.na(type_match)
+
+      rn[type_match] <- prob_repelled_bednets(matches, since_net, species, parameters, i)
+      sn[type_match] <- prob_survives_bednets(rn, matches, since_net, species, parameters, i)
+
+    }
     
-    rn <- prob_repelled_bednets(matches, since_net, species, parameters)
-    sn <- prob_survives_bednets(rn, matches, since_net, species, parameters)
-    
-    unused <- net_time == -1
-    sn[unused] <- 1
-    rn[unused] <- 0
+
   } else {
     phi_bednets <- 0
     sn <- 1
@@ -135,16 +145,34 @@ indoor_spraying <- function(spray_time, renderer, parameters, correlations) {
 #' @param parameters the model parameters
 #' @param correlations correlation parameters
 #' @noRd
+
 distribute_nets <- function(variables, throw_away_net, parameters, correlations) {
   function(timestep) {
     matches <- timestep == parameters$bednet_timesteps
     if (any(matches)) {
+
+      #Finding who gets a net
       target <- which(sample_intervention(
         seq(parameters$human_population),
         'bednets',
         parameters$bednet_coverages[matches],
         correlations
       ))
+
+      #Assigning nets randomly 
+
+      shuffled <- sample(target)
+      n <- length(target)
+      cum_sizes <- round(cumsum(parameters$coverage_by_type) * n)
+      starts <- c(1, head(cum_sizes + 1, -1))
+      ends <- cum_sizes
+
+      split_indices <- Map(function(start, end) shuffled[start:end], starts, ends)
+
+      for (i in 1:length(parameters$coverage_by_type)){
+        variables$queue_update(i, split_indices[i])
+      }
+
       variables$net_time$queue_update(timestep, target)
       throw_away_net$clear_schedule(target)
       throw_away_net$schedule(
@@ -158,6 +186,7 @@ distribute_nets <- function(variables, throw_away_net, parameters, correlations)
 throw_away_nets <- function(variables) {
   function(timestep, target) {
     variables$net_time$queue_update(-1, target)
+    variables$net_type$queue_update(-1, target)
   }
 }
 
@@ -172,15 +201,15 @@ prob_survives_spraying <- function(ks_prime, k0) {
   ks_prime / k0
 }
 
-prob_repelled_bednets <- function(matches, dt, species, parameters) {
-  rnm <- parameters$bednet_rnm[matches, species]
-  gammar <- parameters$bednet_gammar[matches]
-  (parameters$bednet_rn[matches, species] - rnm) * bednet_decay(dt, gammar) + rnm
+prob_repelled_bednets <- function(matches, dt, species, parameters, net_type) {
+  rnm <- parameters$bednet_rnm[matches, species, net_type]
+  gammar <- parameters$bednet_gammar[matches, net_type]
+  (parameters$bednet_rn[matches, species,net_type] - rnm) * bednet_decay(dt, gammar) + rnm
 }
 
-prob_survives_bednets <- function(rn, matches, dt, species, parameters) {
-  dn0 <- parameters$bednet_dn0[matches, species]
-  dn <- dn0 * bednet_decay(dt, parameters$bednet_gammad[matches])
+prob_survives_bednets <- function(rn, matches, dt, species, parameters,net_type) {
+  dn0 <- parameters$bednet_dn0[matches, species,net_type]
+  dn <- dn0 * bednet_decay(dt, parameters$bednet_gammad[matches,net_type])
   1 - rn - dn
 }
 
