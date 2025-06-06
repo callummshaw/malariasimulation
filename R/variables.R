@@ -321,6 +321,7 @@ create_variables <- function(parameters) {
     pev_profile = pev_profile,
     tbv_vaccinated = tbv_vaccinated,
     net_time = net_time,
+    net_type = net_type,
     spray_time = spray_time
   )
   

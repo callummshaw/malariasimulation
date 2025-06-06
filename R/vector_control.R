@@ -31,18 +31,24 @@ prob_bitten <- function(
     sn <- rep(1, n)
     rn <- rep(0, n)
 
-    for (i in 1:length(parameters$coverage_by_type)){
+    for (i in 1:length(parameters$bednet_coverage_by_type)){
       
       type <- net_type == i
-      type_match <- match(test_times, i)
-      type_match <- !is.na(type_match)
-
-      rn[type_match] <- prob_repelled_bednets(matches, since_net, species, parameters, i)
-      sn[type_match] <- prob_survives_bednets(rn, matches, since_net, species, parameters, i)
+      type_match <- match(net_type, i)
+      type_matchx <- !is.na(type_match)
+      
+      
+      both_matches <- ifelse(type_matchx, matches, NA)
+   
+      rn_m <- prob_repelled_bednets(both_matches, since_net, species, parameters, i)
+      sn_m <- prob_survives_bednets(rn_m, both_matches, since_net, species, parameters, i)
+    
+      valid <- !is.na(both_matches)
+      rn[valid] <- rn_m[valid]
+      sn[valid] <- sn_m[valid]
 
     }
-    
-
+ 
   } else {
     phi_bednets <- 0
     sn <- 1
@@ -163,17 +169,19 @@ distribute_nets <- function(variables, throw_away_net, parameters, correlations)
 
       shuffled <- sample(target)
       n <- length(target)
-      cum_sizes <- round(cumsum(parameters$coverage_by_type) * n)
+      cum_sizes <- round(cumsum(parameters$bednet_coverage_by_type) * n)
       starts <- c(1, head(cum_sizes + 1, -1))
       ends <- cum_sizes
 
       split_indices <- Map(function(start, end) shuffled[start:end], starts, ends)
 
-      for (i in 1:length(parameters$coverage_by_type)){
-        variables$queue_update(i, split_indices[i])
+      variables$net_time$queue_update(timestep, target)
+  
+      for (i in 1:length(parameters$bednet_coverage_by_type)){
+        variables$net_type$queue_update(i, sort(split_indices[[i]]))
       }
 
-      variables$net_time$queue_update(timestep, target)
+      
       throw_away_net$clear_schedule(target)
       throw_away_net$schedule(
         target,
@@ -202,14 +210,27 @@ prob_survives_spraying <- function(ks_prime, k0) {
 }
 
 prob_repelled_bednets <- function(matches, dt, species, parameters, net_type) {
-  rnm <- parameters$bednet_rnm[matches, species, net_type]
-  gammar <- parameters$bednet_gammar[matches, net_type]
-  (parameters$bednet_rn[matches, species,net_type] - rnm) * bednet_decay(dt, gammar) + rnm
+  
+  rmn_bb <- parameters$bednet_rnm[,species,net_type,drop = TRUE]
+  gammar_bb <- parameters$bednet_gammar[,net_type,drop = TRUE]
+  rn_bb <- parameters$bednet_rn[, species,net_type,drop = TRUE]
+
+  rnm <- rmn_bb[matches]
+  gammar <- gammar_bb[matches]
+  rn <- rn_bb[matches]
+
+  (rn - rnm) * bednet_decay(dt, gammar) + rnm
 }
 
 prob_survives_bednets <- function(rn, matches, dt, species, parameters,net_type) {
-  dn0 <- parameters$bednet_dn0[matches, species,net_type]
-  dn <- dn0 * bednet_decay(dt, parameters$bednet_gammad[matches,net_type])
+  gammad_bb <- parameters$bednet_gammad[,net_type,drop = TRUE]
+  dn0_bb <- parameters$bednet_dn0[, species,net_type,drop = TRUE]
+
+  gammad <- gammad_bb[matches]
+  dn0 <- dn0_bb[matches]
+
+  dn <- dn0 * bednet_decay(dt, gammad)
+
   1 - rn - dn
 }
 

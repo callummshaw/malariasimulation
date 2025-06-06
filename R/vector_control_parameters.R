@@ -63,7 +63,7 @@ set_bednets <- function(
   parameters$bednet_dn0 <- dn0
   parameters$bednet_rn <- rn
   parameters$bednet_rnm <- rnm
-  parameters$bednets_gammad <- gammad
+  parameters$bednet_gammad <- gammad
   parameters$bednet_gammar <- gammar
   parameters$bednet_retention <- retention
   parameters
