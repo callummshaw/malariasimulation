@@ -165,11 +165,23 @@ distribute_nets <- function(variables, throw_away_net, parameters, correlations)
         correlations
       ))
 
-      #Assigning nets randomly 
+      time_index <- match(timestep,  parameters$bednet_timesteps)
+
+      if (length(time_index) > 1) {
+        stop("ERROR")
+      }
+      #Assigning nets randomly if  
+      if (dim(parameters$bednet_coverage_by_type)[1] > 1){
+      time_index <- match(timestep,  parameters$bednet_timesteps)
+        bedcoverage <- parameters$bednet_coverage_by_type[time_index,]
+      } else{
+        bedcoverage <- parameters$bednet_coverage_by_type
+      }
+      
 
       shuffled <- sample(target)
       n <- length(target)
-      cum_sizes <- round(cumsum(parameters$bednet_coverage_by_type) * n)
+      cum_sizes <- round(cumsum(bedcoverage) * n)
       starts <- c(1, head(cum_sizes + 1, -1))
       ends <- cum_sizes
 
