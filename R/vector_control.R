@@ -31,22 +31,21 @@ prob_bitten <- function(
     sn <- rep(1, n)
     rn <- rep(0, n)
 
-    for (i in 1:length(parameters$bednet_coverage_by_type)){
+    for (i in 1:length(parameters$bednet_coverage_by_type[1,])){
       
       type <- net_type == i
       type_match <- match(net_type, i)
       type_matchx <- !is.na(type_match)
-      
-      
+    
       both_matches <- ifelse(type_matchx, matches, NA)
    
       rn_m <- prob_repelled_bednets(both_matches, since_net, species, parameters, i)
       sn_m <- prob_survives_bednets(rn_m, both_matches, since_net, species, parameters, i)
-    
       valid <- !is.na(both_matches)
+      
       rn[valid] <- rn_m[valid]
       sn[valid] <- sn_m[valid]
-
+    
     }
  
   } else {
@@ -54,7 +53,7 @@ prob_bitten <- function(
     sn <- 1
     rn <- 0
   }
-
+  
   if (parameters$spraying) {
     phi_indoors <- parameters$phi_indoors[[species]]
     protected <- variables$spray_time$get_index_of(set=-1)$not(TRUE)
@@ -170,7 +169,8 @@ distribute_nets <- function(variables, throw_away_net, parameters, correlations)
       if (length(time_index) > 1) {
         stop("ERROR")
       }
-      #Assigning nets randomly if  
+     
+      #Determining which net distribution is needed (can vary by time)
       if (dim(parameters$bednet_coverage_by_type)[1] > 1){
       time_index <- match(timestep,  parameters$bednet_timesteps)
         bedcoverage <- parameters$bednet_coverage_by_type[time_index,]
@@ -178,22 +178,39 @@ distribute_nets <- function(variables, throw_away_net, parameters, correlations)
         bedcoverage <- parameters$bednet_coverage_by_type
       }
       
-
+      #Randomising the individuals who will get each net type
       shuffled <- sample(target)
       n <- length(target)
-      cum_sizes <- round(cumsum(bedcoverage) * n)
-      starts <- c(1, head(cum_sizes + 1, -1))
-      ends <- cum_sizes
 
-      split_indices <- Map(function(start, end) shuffled[start:end], starts, ends)
+      #Number of people who will get each net
+      sizes <- round(bedcoverage * n)
 
-      variables$net_time$queue_update(timestep, target)
-  
-      for (i in 1:length(parameters$bednet_coverage_by_type)){
-        variables$net_type$queue_update(i, sort(split_indices[[i]]))
+      #Checking if the sum of each net type equals the ideal coverage (due to rounding)
+      #Adjust the largest net type to compensate for these changes
+      diff <- n - sum(sizes)
+      if (diff != 0) {
+        sizes[which.max(sizes)] <- sizes[which.max(sizes)] + diff
       }
 
-      
+      #Now we need to assign nets to people!
+
+      #The net indicies 
+      starts <- c(1, head(cumsum(sizes) + 1, -1))
+      ends <- cumsum(sizes)
+
+      #assigning nets the if statement is needed in case a net has 0% coverage at a certain timestep
+     
+      for (i in seq_along(sizes)) {
+        if (starts[i] <= ends[i]) {
+        
+          indices <- shuffled[starts[i]:ends[i]]
+          variables$net_type$queue_update(i, sort(indices))
+        }
+      }
+     
+      # Update net times
+      variables$net_time$queue_update(timestep, target)
+
       throw_away_net$clear_schedule(target)
       throw_away_net$schedule(
         target,
@@ -222,7 +239,6 @@ prob_survives_spraying <- function(ks_prime, k0) {
 }
 
 prob_repelled_bednets <- function(matches, dt, species, parameters, net_type) {
-  
   rmn_bb <- parameters$bednet_rnm[,species,net_type,drop = TRUE]
   gammar_bb <- parameters$bednet_gammar[,net_type,drop = TRUE]
   rn_bb <- parameters$bednet_rn[, species,net_type,drop = TRUE]
@@ -243,7 +259,14 @@ prob_survives_bednets <- function(rn, matches, dt, species, parameters,net_type)
 
   dn <- dn0 * bednet_decay(dt, gammad)
 
-  1 - rn - dn
+  sn <- 1 - rn - dn
+
+  if (any(sn < 0, na.rm = TRUE)) {
+    warn_once("Negative values found in SN (RN0+DN0>1)")
+  } 
+  sn[sn < 0 ] <- 0
+  
+  sn
 }
 
 bednet_decay <- function(t, gamma) {
@@ -263,3 +286,13 @@ net_usage_renderer <- function(net_time, renderer) {
     )
   }
 }
+
+warn_once <- local({
+  printed <- FALSE
+  function(msg) {
+    if (!printed) {
+      warning(msg, call. = FALSE)
+      printed <<- TRUE
+    }
+  }
+})
