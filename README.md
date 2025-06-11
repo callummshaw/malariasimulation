@@ -1,6 +1,3 @@
-[![R build status](https://github.com/mrc-ide/malariasimulation/workflows/R-CMD-check/badge.svg)](https://github.com/mrc-ide/malariasimulation/actions)
-[![codecov](https://codecov.io/github/mrc-ide/malariasimulation/branch/master/graphs/badge.svg)](https://codecov.io/github/mrc-ide/malariasimulation)
-
 # malariasimulation <img src="man/figures/malariasimulation.png" align="right" width=30% height=30% />
 
 A Fork of Imperial College London's next malaria simulation. I have added multiple ITN functionality with seperate decays for rates for repellency and mortality. 
@@ -12,7 +9,7 @@ Assuming:
 nt - number of net distribution times
 nv - number of vector species
 nn - number of net type 
-
+```
 model_input <- set_bednets(
     sim_params,
     timesteps = times, #Times we want to distribute the nets (nt x 1) 
@@ -25,4 +22,4 @@ model_input <- set_bednets(
     gammad =  net_params$gammad, #Death decay rate (nt x nn)
     gammar =  net_params$gammar #Repellency decay rate (nt x nn)
   )
-
+```
