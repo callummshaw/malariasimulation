@@ -8,7 +8,8 @@ create_events <- function(parameters) {
     tbv_vaccination = individual::Event$new(restore=FALSE),
 
     # Bednet events
-    throw_away_net = individual::TargetedEvent$new(parameters$human_population)
+    throw_away_net = individual::TargetedEvent$new(parameters$human_population),
+    change_net = individual::TargetedEvent$new(parameters$human_population)
   )
 
   # Mass vaccination events
@@ -112,6 +113,9 @@ attach_event_listeners <- function(
   if (parameters$bednets == 1) {
     events$throw_away_net$add_listener(
       throw_away_nets(variables)
+    )
+    events$change_net$add_listener(
+      change_nets(variables)
     )
   }
 

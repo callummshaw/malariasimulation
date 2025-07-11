@@ -20,7 +20,7 @@
 #' @param parameters a list of parameters to modify
 #' @param timesteps the timesteps at which to distribute bed nets
 #' @param coverages the proportion of the human population who receive bed nets
-#' @param retention the average number of timesteps a net is kept for
+#' @param retention the average number of timesteps a net is kept for (an array of the number of nets)
 #' @param dn0 a matrix of death probabilities for each species over time.
 #' With nrows=length(timesteps), ncols=length(species)
 #' @param rn a matrix of repelling probabilities for each species over time
@@ -41,21 +41,11 @@ set_bednets <- function(
     rn,
     rnm,
     gammad,
-    gammar
+    gammar,
+    replace
 ) {
   stopifnot(all(coverages >= 0) && all(coverages <= 1))
-  #lengths <- vnapply(list(coverages, gamman), length)
-  #if (!all(lengths == length(timesteps))) {
-   # stop('timesteps and time-varying parameters must align')
-  #}
-  #for (x in list(dn0, rn, rnm)) {
-   # if (ncol(x) != length(parameters$species)) {
-    #  stop('death and repelling probabilities rows need to align with species')
-    #}
-    #if (nrow(x) != length(timesteps)) {
-     # stop('death and repelling probabilities columns need to align with timesteps')
-    #}
-  #}
+  
   parameters$bednets <- TRUE
   parameters$bednet_timesteps <- timesteps
   parameters$bednet_coverages <- coverages
@@ -66,6 +56,7 @@ set_bednets <- function(
   parameters$bednet_gammad <- gammad
   parameters$bednet_gammar <- gammar
   parameters$bednet_retention <- retention
+  parameters$bednet_replace <- replace
   parameters
 }
 

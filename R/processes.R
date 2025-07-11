@@ -306,6 +306,7 @@ create_processes <- function(
       distribute_nets_process = distribute_nets(
         variables,
         events$throw_away_net,
+        events$change_net,
         parameters,
         correlations
       ),
