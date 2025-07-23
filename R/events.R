@@ -115,7 +115,7 @@ attach_event_listeners <- function(
       throw_away_nets(variables)
     )
     events$change_net$add_listener(
-      change_nets(variables)
+      change_nets(variables, parameters, events)
     )
   }
 

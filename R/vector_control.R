@@ -209,23 +209,19 @@ distribute_nets <- function(variables, throw_away_net, change_net, parameters, c
           # Update net times
           variables$net_time$queue_update(timestep, target)
 
-          times <- log_uniform(length(target), parameters$bednet_retention[i]) 
-          #times <- rep(parameters$bednet_retention[i],length(target))
-          if (parameters$bednet_replace == 1 & length(bedcoverage) == 2){
-            if (i == 2){
-              
-              change_net$clear_schedule(target)
-              change_net$schedule(target, times)
-              
-              new_times <- times + log_uniform(length(target), parameters$bednet_retention[1])
-              #new_times <- times + 0.5*parameters$bednet_retention[1]
-              throw_away_net$clear_schedule(target)
-              throw_away_net$schedule( target, new_times) 
-            } else {
-              throw_away_net$clear_schedule(target)
-              throw_away_net$schedule( target, times)
-            }
-          } else {
+          times <-  log_uniform(length(target), parameters$bednet_retention[i]) 
+         
+         #people change nets at the end of the net's life!
+         #this is recursive people will continously get a new net at the end of their retention
+
+          if (parameters$bednet_replace == 1){
+            
+            #when they will init change nets
+            change_net$clear_schedule(target)
+            change_net$schedule(target, times)
+
+ 
+          } else {  #people do not change, rather they now have no net at the end of their retention
           
             throw_away_net$clear_schedule(target)
             throw_away_net$schedule(target, times)
@@ -243,12 +239,16 @@ throw_away_nets <- function(variables) {
   }
 }
 
-change_nets <- function(variables) {
+change_nets <- function(variables, parameters, events) {
+
   function(timestep, target) {
-   
     variables$net_time$queue_update(timestep, target)
     variables$net_type$queue_update(1, target)
-
+    
+    # schedule next throwaway
+    retention_time <- log_uniform(length(target), parameters$bednet_retention[1])
+    
+    events$change_net$schedule(target, retention_time)
   }
 }
 
