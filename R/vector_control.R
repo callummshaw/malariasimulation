@@ -263,18 +263,18 @@ prob_repelled_bednets <- function(dt, species, parameters, net_type) {
   
   
   rnm <- parameters$bednet_rnm[,species,net_type,drop = TRUE]
-  gammar <- parameters$bednet_gammar[,net_type,drop = TRUE]
+  gamman <- parameters$bednet_gamman[,net_type,drop = TRUE]
   rn <- parameters$bednet_rn[, species,net_type,drop = TRUE]
 
-  (rn - rnm) * bednet_decay(dt, gammar) + rnm
+  (rn - rnm) * bednet_decay(dt, gamman) + rnm
 
 }
 
 prob_survives_bednets <- function(rn, dt, species, parameters,net_type) {
-  gammad <- parameters$bednet_gammad[,net_type,drop = TRUE]
+  gamman <- parameters$bednet_gamman[,net_type,drop = TRUE]
   dn0 <- parameters$bednet_dn0[, species,net_type,drop = TRUE]
 
-  dn <- dn0 * bednet_decay(dt, gammad)
+  dn <- dn0 * bednet_decay(dt, gamman)
 
   sn <- 1 - rn - dn
 

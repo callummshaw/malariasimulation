@@ -27,8 +27,7 @@
 #' With nrows=length(timesteps), ncols=length(species)
 #' @param rnm a matrix of minimum repelling probabilities for each species over time
 #' With nrows=length(timesteps), ncols=length(species)
-#' @param gammad a vector of bednet killing half-lives for each distribution timestep
-#' @param gammar a vector of bednet repellency half-lives for each distribution timestep
+#' @param gamman a vector of bednet killing half-lives for each distribution timestep
 
 #' @export
 set_bednets <- function(
@@ -40,8 +39,7 @@ set_bednets <- function(
     dn0,
     rn,
     rnm,
-    gammad,
-    gammar,
+    gamman,
     replace
 ) {
   stopifnot(all(coverages >= 0) && all(coverages <= 1))
@@ -53,8 +51,8 @@ set_bednets <- function(
   parameters$bednet_dn0 <- dn0
   parameters$bednet_rn <- rn
   parameters$bednet_rnm <- rnm
-  parameters$bednet_gammad <- gammad
-  parameters$bednet_gammar <- gammar
+  parameters$bednet_gamman <- gamman
+  #parameters$bednet_gammar <- gammar
   parameters$bednet_retention <- retention
   parameters$bednet_replace <- replace
   parameters
