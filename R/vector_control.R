@@ -207,24 +207,22 @@ distribute_nets <- function(variables, throw_away_net, change_net, parameters, c
           indices <- shuffled[starts[i]:ends[i]]
           variables$net_type$queue_update(i, sort(indices))
           # Update net times
-          variables$net_time$queue_update(timestep, target)
-
-          times <-  log_uniform(length(target), parameters$bednet_retention[i]) 
+          variables$net_time$queue_update(timestep,  sort(indices))
+          times <- log_uniform(length(target), parameters$bednet_retention[i]) 
          
          #people change nets at the end of the net's life!
          #this is recursive people will continously get a new net at the end of their retention
 
           if (parameters$bednet_replace == 1){
-            
             #when they will init change nets
-            change_net$clear_schedule(target)
-            change_net$schedule(target, times)
-
+          
+            change_net$clear_schedule( sort(indices))
+            change_net$schedule( sort(indices), times)
  
           } else {  #people do not change, rather they now have no net at the end of their retention
           
-            throw_away_net$clear_schedule(target)
-            throw_away_net$schedule(target, times)
+            throw_away_net$clear_schedule( sort(indices))
+            throw_away_net$schedule( sort(indices), times)
           }
         }
       }
@@ -240,14 +238,11 @@ throw_away_nets <- function(variables) {
 }
 
 change_nets <- function(variables, parameters, events) {
-
   function(timestep, target) {
     variables$net_time$queue_update(timestep, target)
     variables$net_type$queue_update(1, target)
-    
     # schedule next throwaway
-    retention_time <- log_uniform(length(target), parameters$bednet_retention[1])
-    
+    retention_time <- log_uniform(1, parameters$bednet_retention[1]) 
     events$change_net$schedule(target, retention_time)
   }
 }
