@@ -39,8 +39,13 @@ prob_bitten <- function(
       
       time_masked <-  replace(since_net, is.na(type_match) | net_time < 0, NA)
 
-      rn_m <- prob_repelled_bednets(time_masked, species, parameters, i)
-      sn_m <- prob_survives_bednets(rn_m, time_masked, species, parameters, i)
+      gamman <- parameters$bednet_gamman[1,i,drop = TRUE]
+
+      inv_gamma <- 1 / gamman
+      exp_decay <- exp(-time_masked * inv_gamma)
+     
+      rn_m <- prob_repelled_bednets(species, parameters, i,exp_decay)
+      sn_m <- prob_survives_bednets(rn_m, species, parameters, i, exp_decay)
       valid <- !is.na(time_masked)
       
       rn[valid] <- rn_m[valid]
@@ -154,9 +159,10 @@ indoor_spraying <- function(spray_time, renderer, parameters, correlations) {
 
 distribute_nets <- function(variables, throw_away_net, change_net, parameters, correlations) {
   function(timestep) {
+   
     matches <- timestep == parameters$bednet_timesteps
     if (any(matches)) {
-
+      print(timestep)
       #Finding who gets a net
       target <- which(sample_intervention(
         seq(parameters$human_population),
@@ -215,7 +221,7 @@ distribute_nets <- function(variables, throw_away_net, change_net, parameters, c
 
           if (parameters$bednet_replace == 1){
             #when they will init change nets
-          
+            
             change_net$clear_schedule( sort(indices))
             change_net$schedule( sort(indices), times)
  
@@ -259,24 +265,20 @@ prob_survives_spraying <- function(ks_prime, k0) {
   ks_prime / k0
 }
 
-prob_repelled_bednets <- function(dt, species, parameters, net_type) {
+prob_repelled_bednets <- function(species, parameters, net_type, exp_decay) {
   
+  rnm <- parameters$bednet_rnm[1,species,net_type,drop = TRUE]
   
-  rnm <- parameters$bednet_rnm[,species,net_type,drop = TRUE]
-  gamman <- parameters$bednet_gamman[,net_type,drop = TRUE]
-  rn <- parameters$bednet_rn[, species,net_type,drop = TRUE]
+  rn <- parameters$bednet_rn[1, species,net_type,drop = TRUE]
+    
+  (rn - rnm) * exp_decay + rnm
 
-  (rn - rnm) * bednet_decay(dt, gamman) + rnm
+  }
 
-}
+prob_survives_bednets <- function(rn, species, parameters,net_type, exp_decay) {
+  dn0 <- parameters$bednet_dn0[1, species,net_type,drop = TRUE]
 
-prob_survives_bednets <- function(rn, dt, species, parameters,net_type) {
-  gamman <- parameters$bednet_gamman[,net_type,drop = TRUE]
-  dn0 <- parameters$bednet_dn0[, species,net_type,drop = TRUE]
-
-  dn <- dn0 * bednet_decay(dt, gamman)
-
-  sn <- 1 - rn - dn
+  sn <- 1 - rn - dn0 * exp_decay
 
   if (any(sn < 0, na.rm = TRUE)) {
     warn_once("Negative values found in SN (RN0+DN0>1)")
@@ -286,9 +288,6 @@ prob_survives_bednets <- function(rn, dt, species, parameters,net_type) {
   sn
 }
 
-bednet_decay <- function(t, gamma) {
-  exp(-t / gamma)
-}
 
 spraying_decay <- function(t, theta, gamma) {
   1 / (1 + exp(-(theta + gamma * t)))
@@ -313,3 +312,4 @@ warn_once <- local({
     }
   }
 })
+
