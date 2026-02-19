@@ -20,6 +20,7 @@ model_input <- set_bednets(
     rn = net_params$rn,  #Initial repellency from nets (nt x nv x nn)
     rnm = net_params$rnm,  #Base repellency from nets (nt x nv x nn)
     gammad =  net_params$gammad, #Death decay rate (nt x nn)
-    gammar =  net_params$gammar #Repellency decay rate (nt x nn)
+    gammar =  net_params$gammar #Repellency decay rate (nt x nn) Note this is currently switched off in the code and we assume gammar == gammad, but can be turned on (vector_control.R and vector_control_parameters.R)
+    bednet_replace = 1 #if we want people to replace there net at end retention period (set to 0 if we dont want this functionality)
   )
 ```
